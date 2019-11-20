@@ -18,7 +18,7 @@ CPPUTEST_USE_GCOV = Y
 
 CPP_PLATFORM = Gcc
 
-CPPUTEST_HOME=/home/ari/C/cpputest/
+CPPUTEST_HOME=/home/chromebuntu/Downloads/C/cpputest/
 
 CFLAGS = -Dmalloc=cpputest_malloc -Dfree=cpputest_free
 CPPFLAGS =
