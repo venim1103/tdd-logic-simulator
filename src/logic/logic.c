@@ -39,6 +39,26 @@ void bufferValueIntoArray(uint8_t (*out_buf)[BUFFER_LEN], uint8_t in_buf)
   }
 }
 
+uint8_t inputBuffer(uint8_t* buffer, uint8_t input_bit, uint8_t loaded_input, uint8_t load_flag)
+{
+  uint8_t local_buf_array[BUFFER_LEN];
+  if(flag == 1)
+  {
+    *buffer = loaded_input;
+    bufferValueIntoArray(&local_buf_array, buffer);
+    return local_buf_array[BIT_LEN];  // Return last bit
+  } else
+  {
+    buffer[]
+    for(size_t i = 0; i < BUFFER_LEN; i++)
+    {
+
+    }
+    return local_buf_array[BIT_LEN];  // Return last bit
+  }
+  return 2;
+}
+
 uint8_t inputBuffer_block_exec(uint8_t* input)
 {
   uint8_t joku = *input;

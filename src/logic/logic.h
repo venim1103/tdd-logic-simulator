@@ -19,6 +19,7 @@ void inputBuffer_block_init(void);
 void arrayIntoBufferedValue(uint8_t* out_buf, uint8_t* in_buf, size_t len);
 void bufferValueIntoArray(uint8_t (*out_buf)[BUFFER_LEN], uint8_t in_buf);
 uint8_t inputBuffer_block_exec(uint8_t* input);
+uint8_t inputBuffer(uint8_t input_bit, uint8_t loaded_input, uint8_t load_flag);
 
 #endif
 

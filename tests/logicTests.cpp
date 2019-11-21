@@ -70,8 +70,11 @@ TEST(logic, SentShiftRegisterBitsMovingCorrectly)
   #define TEST_NUM 3
   #define TEST_STEPS 4
 
+  uint8_t input_buffer = 0;
   uint8_t output_bit = 0;
-  uint8_t input_signal = 0;
+  uint8_t input_bit = 0;
+  uint8_t load_values = 0;
+  uint8_t load_flag = 0;
 
   uint8_t test_input[TEST_NUM][TEST_STEPS][BUFFER_LEN] = {{{1,0,0}, {0,1,0}, {0,0,1}, {0,0,0}, }, // test0
                                                           {{1,1,0}, {0,1,1}, {0,0,1}, {0,0,0}, }, // test1
@@ -91,12 +94,23 @@ TEST(logic, SentShiftRegisterBitsMovingCorrectly)
 
   for(uint8_t test = 0; test < 1; test++)
   {
+    load_flag = 1;
+    load_values = shift_reg[test];
+    
     for(uint8_t step = 0; step < TEST_STEPS; step++)
     {
-      output_bit = inputBuffer(input_signal);
-      CHECK_EQUAL(test_input[test][step][0], shift_reg[0]);
-      CHECK_EQUAL(test_buffer[test][step], 0);
+      input_bit = output_bit; // flow bits forward
+      output_bit = inputBuffer(&input_buffer, input_bit, load_values, load_flag);
+      CHECK_EQUAL(0, output_bit);
+      for(uint8_t bit = 0; bit < BUFFER_LEN; bit++)
+      { 
+        input_bit = output_bit; // flow bits forward
+        output_bit = inputBuffer(&input_buffer, input_bit, load_values, load_flag);
+        CHECK_EQUAL(test_input[test][step][bit], output_bit);
+      }
+      CHECK_EQUAL(test_buffer[test][step], input_buffer);
     }
+    load_flag = 0; // disable after each test
   }
   #undef TEST_NUM
   #undef TEST_STEPS
