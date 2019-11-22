@@ -15,7 +15,6 @@ TEST_GROUP(logic)
 {
   void updateBuffer()
   {
-    inputBuffer_block_exec(input_buffer);
     memcpy(buffer, input_buffer, BUFFER_LEN);
   }
 
@@ -44,8 +43,6 @@ TEST(logic, InputWithPointersHaveSameValues)
   {
     memcpy(*test_input_num_p, test_input[i], sizeof(uint8_t)*BUFFER_LEN);
     CHECK_EQUAL(test_input_num[i], (*test_input_num_p)[i]);
-//    printf("\ntest_input_num: %d %d %d\n", (*test_input_num_p)[0], (*test_input_num_p)[1], (*test_input_num_p)[2]);
-//    printf("\ntest_input_num: %d %d %d\n", test_input_num[0], test_input_num[1], test_input_num[2]);
   }
 }
 
@@ -62,7 +59,15 @@ TEST(logic, ArrayReadCorrectlyIntoBuffer)
   {
     memcpy(*test_input_num_p, test_input[i], sizeof(uint8_t)*BUFFER_LEN);
     bits = i; // 0b000 -> 0b111
-    arrayIntoBufferedValue(&buf, test_input_num_p, 0);
+    arrayIntoBufferedValue(&buf, test_input_num_p);
+    BITS_EQUAL(bits, buf, mask);
+    buf = 0;
+  }
+  for(uint8_t i = 0; i < 8; i++)
+  {
+    bits = (uint8_t)(7-i); // 0b111 -> 0b000
+    memcpy(*test_input_num_p, test_input[bits], sizeof(uint8_t)*BUFFER_LEN);
+    arrayIntoBufferedValue(&buf, test_input_num_p);
     BITS_EQUAL(bits, buf, mask);
     buf = 0;
   }
@@ -76,9 +81,7 @@ TEST(logic, BufferReadCorrectlyIntoArray)
   for(uint8_t i = 0; i < 8; i++)
   {
     buf = i; // 0b000 -> 0b111
-    bufferValueIntoArray(buffer_p, buf, 0);
-//    printf("\ntest_input_num: %d %d %d\n", test_input[buf][0], test_input[buf][1], test_input[buf][2]);
-//    printf("(*buffer_p): %d %d %d\n\n", (*buffer_p)[0], (*buffer_p)[1], (*buffer_p)[2]);
+    bufferValueIntoArray(buffer_p, buf);
     CHECK_EQUAL(test_input[i][0], (*buffer_p)[0]);  // 0b00[0] -> 0b11[1]
     CHECK_EQUAL(test_input[i][1], (*buffer_p)[1]);  // 0b0[0]0 -> 0b1[1]1
     CHECK_EQUAL(test_input[i][2], (*buffer_p)[2]);  // 0b[0]00 -> 0b[1]11
@@ -86,10 +89,8 @@ TEST(logic, BufferReadCorrectlyIntoArray)
 
   for(int i = 0; i < 8; i++)
   {
-    buf = uint8_t(7-i); // 0b000 -> 0b111
-    bufferValueIntoArray(buffer_p, buf, 0);
-//    printf("\ntest_input_num: %d %d %d\n", test_input[buf][0], test_input[buf][1], test_input[buf][2]);
-//    printf("(*buffer_p): %d %d %d\n\n", (*buffer_p)[0], (*buffer_p)[1], (*buffer_p)[2]);
+    buf = uint8_t(7-i); // 0b111 -> 0b000
+    bufferValueIntoArray(buffer_p, buf);
     CHECK_EQUAL(test_input[buf][0], (*buffer_p)[0]);  // 0b00[0] -> 0b11[1]
     CHECK_EQUAL(test_input[buf][1], (*buffer_p)[1]);  // 0b0[0]0 -> 0b1[1]1
     CHECK_EQUAL(test_input[buf][2], (*buffer_p)[2]);  // 0b[0]00 -> 0b[1]11
@@ -99,31 +100,28 @@ TEST(logic, BufferReadCorrectlyIntoArray)
 TEST(logic, LoadCorrectValueIntoShiftRegister)
 {
   #define TEST_NUM 3
-  #define TEST_STEPS 4
 
   uint8_t shift_reg[TEST_NUM] = {0x04, 0x06, 0x05};
-  uint8_t local_input_buf = 0;
+  uint8_t local_output_buf = 0;
   uint8_t output_bit = 0;
   uint8_t input_bit = 0;
   uint8_t load_values = 0;
   uint8_t load_flag = 0;
-  uint8_t local_input_buf_array[BUFFER_LEN];
-  memset(local_input_buf_array, 0, sizeof(uint8_t)*BUFFER_LEN);
-  uint8_t (*local_input_buf_array_p)[BUFFER_LEN] = &local_input_buf_array;
+  uint8_t local_output_buf_array[BUFFER_LEN];
+  memset(local_output_buf_array, 0, sizeof(uint8_t)*BUFFER_LEN);
+  uint8_t (*local_output_buf_array_p)[BUFFER_LEN] = &local_output_buf_array;
 
-  printf("\n");
   for(uint8_t test = 0; test < TEST_NUM; test++)
   {
     load_flag = 1;
     load_values = shift_reg[test];
-    output_bit = inputBuffer(&local_input_buf, local_input_buf_array_p, input_bit, load_values, load_flag);
-    printf("output_bit: %d\n", output_bit);
+    local_output_buf = 0; // REMEMBER TO INITIALIZE THE OUTPUT BEFORE USING THE FUNCTION!
+    output_bit = inputBuffer(&local_output_buf, local_output_buf_array_p, input_bit, load_values, load_flag);
     load_flag = 0;
-//    CHECK_EQUAL(shift_reg[test], local_input_buf);
+    CHECK_EQUAL(shift_reg[test], local_output_buf);
+    CHECK_EQUAL((*local_output_buf_array_p)[BIT_LEN], output_bit);
   }
-  FAIL("HAHA");
   #undef TEST_NUM
-  #undef TEST_STEPS
 }
 
 /*
@@ -132,15 +130,15 @@ IGNORE_TEST(logic, SentShiftRegisterBitsMovingCorrectly)
   #define TEST_NUM 3
   #define TEST_STEPS 4
 
-  uint8_t local_input_buf = 0;
+  uint8_t local_output_buf = 0;
   uint8_t output_bit = 0;
   uint8_t input_bit = 0;
   uint8_t load_values = 0;
   uint8_t load_flag = 0;
-  uint8_t local_input_buf_array[BUFFER_LEN];
-  memset(local_input_buf_array, 0, sizeof(local_input_buf_array)*BUFFER_LEN);
-  uint8_t (*local_input_buf_array_p)[BUFFER_LEN] = &local_input_buf_array;
-  printf("*local_input_buf_array_p: %d %d %d", *local_input_buf_array_p[0],*local_input_buf_array_p[1],*local_input_buf_array_p[2]);
+  uint8_t local_output_buf_array[BUFFER_LEN];
+  memset(local_output_buf_array, 0, sizeof(local_output_buf_array)*BUFFER_LEN);
+  uint8_t (*local_output_buf_array_p)[BUFFER_LEN] = &local_output_buf_array;
+  printf("*local_output_buf_array_p: %d %d %d", *local_output_buf_array_p[0],*local_output_buf_array_p[1],*local_output_buf_array_p[2]);
 
   uint8_t test_input_moving[TEST_NUM][TEST_STEPS][BUFFER_LEN] = {{{1,0,0}, {0,1,0}, {0,0,1}, {0,0,0}}, // test0
                                                           {{1,1,0}, {0,1,1}, {0,0,1}, {0,0,0}}, // test1
@@ -168,10 +166,10 @@ IGNORE_TEST(logic, SentShiftRegisterBitsMovingCorrectly)
       for(uint8_t bit = 0; bit < BUFFER_LEN; bit++)
       { 
         input_bit = output_bit; // flow bits forward
-        output_bit = inputBuffer(&local_input_buf, local_input_buf_array_p, input_bit, load_values, load_flag);
+        output_bit = inputBuffer(&local_output_buf, local_output_buf_array_p, input_bit, load_values, load_flag);
         CHECK_EQUAL(test_input_moving[test][step][bit], output_bit);
       }
-      CHECK_EQUAL(test_buffer[test][step], local_input_buf);
+      CHECK_EQUAL(test_buffer[test][step], local_output_buf);
     }
     load_flag = 0; // disable after each test
   }
