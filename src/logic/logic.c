@@ -13,7 +13,7 @@ void inputBuffer_block_init(void)
   memset(buf_array, 0, sizeof(buf_array)*BUFFER_LEN);
 }
 
-void arrayIntoBufferedValue(uint8_t *out_buf, uint8_t (*in_buf)[BUFFER_LEN])
+void arrayIntoBufferedValue(uint8_t *out_buf, uint8_t (*in_buf)[BUFFER_LEN], uint8_t direction_flag)
 {
   size_t counter = 0;
   uint8_t local_out_buf = *out_buf;
@@ -21,8 +21,14 @@ void arrayIntoBufferedValue(uint8_t *out_buf, uint8_t (*in_buf)[BUFFER_LEN])
   for(size_t i = 0; i < BUFFER_LEN; i++)
   {
     counter = BUFFER_LEN-(i+1);
-//    local_buf |= (*in_buf[i]<<i); // FOR OTHER WAY AROUND!
-    local_in_buf = (*in_buf)[counter];
+    if(direction_flag == 1)
+    {
+//      local_buf |= (*in_buf[i]<<i); // FOR OTHER WAY AROUND!
+      local_in_buf = (*in_buf)[i]; // FOR OTHER WAY AROUND!
+    } else
+    {
+      local_in_buf = (*in_buf)[counter];
+    }
     local_out_buf |= (uint8_t)(local_in_buf<<i);
     *out_buf = local_out_buf;
 //    printf("\n");
@@ -30,27 +36,37 @@ void arrayIntoBufferedValue(uint8_t *out_buf, uint8_t (*in_buf)[BUFFER_LEN])
   }
 }
 
-void bufferValueIntoArray(uint8_t (*out_buf)[BUFFER_LEN], uint8_t in_buf)
+void bufferValueIntoArray(uint8_t (*out_buf)[BUFFER_LEN], uint8_t in_buf, uint8_t direction_flag)
 {
   size_t counter = 0;
   uint8_t local_buf = 0;
   for(size_t i = 0; i < BUFFER_LEN; i++)
   {
     counter = BUFFER_LEN-(i+1);
-    local_buf = (in_buf & ((uint8_t)(1<<counter)));
+    if(direction_flag == 1)
+    {
 //    local_buf = (in_buf & ((uint8_t)(1<<i)));
+      local_buf = (in_buf & ((uint8_t)(1<<i)));
+    } else
+    {
+      local_buf = (in_buf & ((uint8_t)(1<<counter)));
+    }
 //    printf("in_buf: %d, local_buf:%d\n", in_buf, local_buf);
     local_buf = (local_buf > 0) ? 1 : 0;
     (*out_buf)[i] = local_buf;
   }
 }
 
-uint8_t inputBuffer(uint8_t* buffer, uint8_t (*buffer_array)[BUFFER_LEN], uint8_t input_bit, uint8_t loaded_input, uint8_t load_flag)
+uint8_t inputBuffer(uint8_t* buffer, uint8_t (*buffer_array)[BUFFER_LEN], uint8_t input_bit, uint8_t loaded_input, uint8_t load_flag, uint8_t direction_flag)
 {
+  uint8_t dir = 0;
+  if(direction_flag == 0) dir = 0;
+  if(direction_flag == 1) dir = 0;
+
   if(load_flag == 1)
   {
-    bufferValueIntoArray(buffer_array, loaded_input);
-    arrayIntoBufferedValue(buffer, buffer_array);
+    bufferValueIntoArray(buffer_array, loaded_input, direction_flag);
+    arrayIntoBufferedValue(buffer, buffer_array, dir);
 //    printf("\n");
 //    printf("buffer: %d, (*buffer_array): %d %d %d, input_bit:%d, loaded_input: %d\n", *buffer, (*buffer_array)[0], (*buffer_array)[1], (*buffer_array)[2], input_bit, loaded_input);
     return (*buffer_array)[BIT_LEN];  // Return last bit
