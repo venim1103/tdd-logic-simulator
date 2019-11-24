@@ -137,6 +137,52 @@ TEST(logic, LoadValueIntoShiftRegisterRightBitFirst)
   #undef TEST_NUM
 }
 
+TEST(logic, SendingBitsShiftRegisterValues)
+{
+  #define TEST_NUM 3
+  #define TEST_STEPS 4
+  uint8_t output_bit = 0;
+  uint8_t input_bit = 0;
+  uint8_t load_values = 0;
+  uint8_t load_flag = 0;
+  uint8_t direction_flag = 1;
+  uint8_t test_array_input_moving[TEST_NUM][TEST_STEPS][BUFFER_LEN] = {{{1,0,0}, {0,1,0}, {0,0,1}, {0,0,0}}, // test0
+                                                                 {{1,1,0}, {0,1,1}, {0,0,1}, {0,0,0}}, // test1
+                                                                 {{1,0,1}, {0,1,0}, {0,0,1}, {0,0,0}}};// test2
+
+                                          //   0b100 0b010 0b001 0b000 
+  uint8_t test_buffer[TEST_NUM][TEST_STEPS] = {{0x04, 0x02, 0x01, 0x00}, //test0
+        
+                                          //   0b110 0b011 0b001 0b000
+                                               {0x06, 0x03, 0x01, 0x00}, //test1
+                 
+                                          //   0b101 0b010 0b001 0b000 
+                                               {0x05, 0x02, 0x01, 0x00}};//test2
+  for(uint8_t test = 0; test < 1; test++)
+  {
+    load_values = test_buffer_value[test];
+//    for(uint8_t step = 0; step < TEST_STEPS; step++)
+//    {
+      load_flag = 1;
+      buffer_value = 0;  // reset the buffer
+      output_bit = inputBuffer(buffer_value_p, buffer_p, input_bit, load_values, load_flag, direction_flag);
+      printf("\ntest_buffer: %d,  input_bit: %d,  test_buffer_value: %d  buffer: %d %d %d,  buffer_value: %d  output_bit: %d\n", test_buffer[test][0], input_bit, test_buffer_value[test], (*buffer_p)[0], (*buffer_p)[1], (*buffer_p)[2], *buffer_value_p,  output_bit);
+      load_flag = 0; // disable after each test
+      for(uint8_t bit = 0; bit < BUFFER_LEN; bit++)
+      { 
+        output_bit = inputBuffer(buffer_value_p, buffer_p, input_bit, load_values, load_flag, direction_flag);
+        printf("\ninput_bit: %d,  test_buffer_value: %d  buffer: %d %d %d,  buffer_value: %d  output_bit: %d\n", input_bit, test_buffer_value[test], (*buffer_p)[0], (*buffer_p)[1], (*buffer_p)[2], *buffer_value_p,  output_bit);
+        CHECK_EQUAL(test_array_input_moving[test][step][bit], output_bit);
+        CHECK_EQUAL(test_buffer[test][step], buffer_value);
+        input_bit = output_bit;
+      }
+//    }
+  }
+  printf("\n%d\n", test_array_input_moving[0][0][0]);
+  #undef TEST_NUM
+  #undef TEST_STEPS
+}
+
 /*
 IGNORE_TEST(logic, SentShiftRegisterBitsMovingCorrectly)
 {
